@@ -77,23 +77,25 @@ def trades_loss(model,
         x_adv = Variable(x_natural + delta, requires_grad=False)
 
     elif distance == 'pgap':
-        x_natural.requires_grad = True
 
-        with torch.enable_grad():
-            loss_t = F.cross_entropy(model(x_natural), y)
+        for _ in range(perturb_steps):
+            x_adv.requires_grad = True
 
-        model.zero_grad()
-        loss_t.backward()
+            with torch.enable_grad():
+                loss_t = F.cross_entropy(model(x_adv), y)
 
-        data_grad = x_natural.grad
+            grad = torch.autograd.grad(loss_t, [x_adv])[0]
+            mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim-1)))
+            mu_x = torch.ones(x_adv.shape)*mu_x
+            neta = 1./(1 - epsilon**2)
+            k22 = neta*(x_natural-mu_x)
+            k21 = torch.square(torch.norm(
+                x_natural-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
+            x_adv = mu_x + k22 + torch.sqrt(k21)*torch.sign(grad.detach())
 
-        mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim-1)))
-        mu_x = torch.ones(x_adv.shape)*mu_x
-        neta = 1./(1 - epsilon**2)
-        k22 = neta*(x_natural-mu_x)
-        k21 = torch.square(torch.norm(
-            x_natural-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
-        x_adv = mu_x + k22 + torch.sqrt(k21)*data_grad.sign()
+            logits = model(x_adv)
+            if (logits.data.max(1)[1] == y.data).float().mean() <= 0.5:
+                break
 
     else:
         x_adv = torch.clamp(x_adv, 0.0, 1.0)
