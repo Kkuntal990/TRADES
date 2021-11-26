@@ -92,8 +92,7 @@ def trades_loss(model,
             k21 = torch.square(torch.norm(
                 x_adv-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
             x_adv = mu_x + k22 + torch.sqrt(k21)*torch.sign(grad.detach())
-
-            logits = model(x_adv)
+            logits = model(x_adv.detach_())
             if (logits.data.max(1)[1] == y.data).float().mean() <= 0.5:
                 break
 
