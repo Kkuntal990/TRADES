@@ -12,7 +12,8 @@ from models.small_cnn import *
 from trades import trades_loss
 
 
-parser = argparse.ArgumentParser(description='PyTorch MNIST TRADES Adversarial Training')
+parser = argparse.ArgumentParser(
+    description='PyTorch MNIST TRADES Adversarial Training')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
@@ -61,7 +62,7 @@ train_loader = torch.utils.data.DataLoader(
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False,
                    transform=transforms.ToTensor()),
-                   batch_size=args.test_batch_size, shuffle=False, **kwargs)
+    batch_size=args.test_batch_size, shuffle=False, **kwargs)
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -79,7 +80,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                            step_size=args.step_size,
                            epsilon=args.epsilon,
                            perturb_steps=args.num_steps,
-                           beta=args.beta)
+                           beta=args.beta, distance='pgap')
 
         loss.backward()
         optimizer.step()
@@ -99,7 +100,8 @@ def eval_train(model, device, train_loader):
         for data, target in train_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            train_loss += F.cross_entropy(output, target, size_average=False).item()
+            train_loss += F.cross_entropy(output,
+                                          target, size_average=False).item()
             pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
     train_loss /= len(train_loader.dataset)
@@ -118,7 +120,8 @@ def eval_test(model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.cross_entropy(output, target, size_average=False).item()
+            test_loss += F.cross_entropy(output,
+                                         target, size_average=False).item()
             pred = output.max(1, keepdim=True)[1]
             correct += pred.eq(target.view_as(pred)).sum().item()
     test_loss /= len(test_loader.dataset)
@@ -145,7 +148,8 @@ def adjust_learning_rate(optimizer, epoch):
 def main():
     # init model, Net() can be also used here for training
     model = SmallCNN().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr,
+                          momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
         # adjust learning rate for SGD

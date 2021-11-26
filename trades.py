@@ -31,9 +31,6 @@ def trades_loss(model,
     c2 = 1e4
     # generate adversarial example
     x_adv = x_natural.detach() + 0.001 * torch.randn(x_natural.shape).cuda().detach()
-   
-
-    
 
     if distance == 'l_inf':
         for _ in range(perturb_steps):
@@ -43,9 +40,10 @@ def trades_loss(model,
                                        F.softmax(model(x_natural), dim=1))
             grad = torch.autograd.grad(loss_kl, [x_adv])[0]
             x_adv = x_adv.detach() + step_size * torch.sign(grad.detach())
-            x_adv = torch.min(torch.max(x_adv, x_natural - epsilon), x_natural + epsilon)
+            x_adv = torch.min(torch.max(x_adv, x_natural -
+                              epsilon), x_natural + epsilon)
             x_adv = torch.clamp(x_adv, 0.0, 1.0)
-            
+
     elif distance == 'l_2':
         delta = 0.001 * torch.randn(x_natural.shape).cuda().detach()
         delta = Variable(delta.data, requires_grad=True)
@@ -67,7 +65,8 @@ def trades_loss(model,
             delta.grad.div_(grad_norms.view(-1, 1, 1, 1))
             # avoid nan or inf if gradient is 0
             if (grad_norms == 0).any():
-                delta.grad[grad_norms == 0] = torch.randn_like(delta.grad[grad_norms == 0])
+                delta.grad[grad_norms == 0] = torch.randn_like(
+                    delta.grad[grad_norms == 0])
             optimizer_delta.step()
 
             # projection
@@ -86,12 +85,13 @@ def trades_loss(model,
 
             grad = torch.autograd.grad(loss_t, [x_adv])[0]
             mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim)))
-            mu_x = torch.ones(x_adv.shape)*mu_x
+            mu_x = mu_x[:, None, None, None]*torch.ones(x_adv.shape).cuda()
             neta = 1./(1 - epsilon**2)
             k22 = neta*(x_adv-mu_x)
             k21 = torch.square(torch.norm(
                 x_adv-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
-            x_adv = mu_x + k22 + torch.sqrt(k21)*torch.sign(grad.detach())
+            x_adv = mu_x + k22 + \
+                torch.sqrt(k21[:, None, None, None])*torch.sign(grad.detach())
             logits = model(x_adv.detach_())
             if (logits.data.max(1)[1] == y.data).float().mean() <= 0.5:
                 break
