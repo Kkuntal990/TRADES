@@ -85,12 +85,12 @@ def trades_loss(model,
                 loss_t = F.cross_entropy(model(x_adv), y)
 
             grad = torch.autograd.grad(loss_t, [x_adv])[0]
-            mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim-1)))
+            mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim)))
             mu_x = torch.ones(x_adv.shape)*mu_x
             neta = 1./(1 - epsilon**2)
-            k22 = neta*(x_natural-mu_x)
+            k22 = neta*(x_adv-mu_x)
             k21 = torch.square(torch.norm(
-                x_natural-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
+                x_adv-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
             x_adv = mu_x + k22 + torch.sqrt(k21)*torch.sign(grad.detach())
 
             logits = model(x_adv)
