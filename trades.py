@@ -27,8 +27,14 @@ def trades_loss(model,
     criterion_kl = nn.KLDivLoss(size_average=False)
     model.eval()
     batch_size = len(x_natural)
+
+    c2 = 1e4
     # generate adversarial example
     x_adv = x_natural.detach() + 0.001 * torch.randn(x_natural.shape).cuda().detach()
+   
+
+    
+
     if distance == 'l_inf':
         for _ in range(perturb_steps):
             x_adv.requires_grad_()
@@ -39,6 +45,7 @@ def trades_loss(model,
             x_adv = x_adv.detach() + step_size * torch.sign(grad.detach())
             x_adv = torch.min(torch.max(x_adv, x_natural - epsilon), x_natural + epsilon)
             x_adv = torch.clamp(x_adv, 0.0, 1.0)
+            
     elif distance == 'l_2':
         delta = 0.001 * torch.randn(x_natural.shape).cuda().detach()
         delta = Variable(delta.data, requires_grad=True)
@@ -68,6 +75,26 @@ def trades_loss(model,
             delta.data.clamp_(0, 1).sub_(x_natural)
             delta.data.renorm_(p=2, dim=0, maxnorm=epsilon)
         x_adv = Variable(x_natural + delta, requires_grad=False)
+
+    elif distance == 'pgap':
+        x_natural.requires_grad = True
+
+        with torch.enable_grad():
+            loss_t = F.cross_entropy(model(x_natural), y)
+
+        model.zero_grad()
+        loss_t.backward()
+
+        data_grad = x_natural.grad
+
+        mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim-1)))
+        mu_x = torch.ones(x_adv.shape)*mu_x
+        neta = 1./(1 - epsilon**2)
+        k22 = neta*(x_natural-mu_x)
+        k21 = torch.square(torch.norm(
+            x_natural-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
+        x_adv = mu_x + k22 + torch.sqrt(k21)*data_grad.sign()
+
     else:
         x_adv = torch.clamp(x_adv, 0.0, 1.0)
     model.train()
