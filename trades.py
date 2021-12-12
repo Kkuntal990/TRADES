@@ -79,7 +79,7 @@ def trades_loss(model,
         x_adv = Variable(x_natural + delta, requires_grad=False)
 
     elif distance == 'pgap':
-        x_adv = x_natural.detach()
+        #x_adv = x_natural.detach()
         for _ in range(perturb_steps):
             x_adv.requires_grad = True
             logits = model(x_adv)
