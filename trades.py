@@ -79,9 +79,9 @@ def trades_loss(model,
 
         for _ in range(perturb_steps):
             x_adv.requires_grad = True
-
+            logits = model(x_adv)
             with torch.enable_grad():
-                loss_t = F.cross_entropy(model(x_adv), y)
+                loss_t = F.cross_entropy(logits, y)
 
             grad = torch.autograd.grad(loss_t, [x_adv])[0]
             mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim)))
