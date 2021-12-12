@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.optim as optim
-
+import numpy as np
 
 def squared_l2_norm(x):
     flattened = x.view(x.unsqueeze(0).shape[0], -1)
@@ -33,12 +33,15 @@ def trades_loss(model,
     x_adv = x_natural.detach() + 0.001 * torch.randn(x_natural.shape).cuda().detach()
 
     if distance == 'l_inf':
+        print('l_inf')
         for _ in range(perturb_steps):
             x_adv.requires_grad_()
             with torch.enable_grad():
                 loss_kl = criterion_kl(F.log_softmax(model(x_adv), dim=1),
                                        F.softmax(model(x_natural), dim=1))
             grad = torch.autograd.grad(loss_kl, [x_adv])[0]
+            
+            #print(grad.shape, loss_kl)
             x_adv = x_adv.detach() + step_size * torch.sign(grad.detach())
             x_adv = torch.min(torch.max(x_adv, x_natural -
                               epsilon), x_natural + epsilon)
@@ -83,8 +86,8 @@ def trades_loss(model,
             with torch.enable_grad():
                 loss_t = F.cross_entropy(logits, y)
 
-            grad = torch.autograd.grad(loss_t, [x_adv])
-            print(grad.shape)
+            grad = torch.autograd.grad(loss_t, [x_adv])[0]
+            #print(grad.shape, loss_t)
             mu_x = torch.mean(x_adv, axis=tuple(range(1, x_adv.ndim)))
             mu_x = mu_x[:, None, None, None]*torch.ones(x_adv.shape).cuda()
             neta = 1./(1 - epsilon**2)
@@ -92,9 +95,10 @@ def trades_loss(model,
             k21 = torch.square(torch.norm(
                 x_adv-mu_x, p=2, dim=tuple(range(1, mu_x.ndim))))*(neta**2) + c2*(neta*(epsilon**2))
             x_adv = mu_x + k22 + \
-                torch.sqrt(k21[:, None, None, None])*torch.sign(grad[0].detach())
+                torch.sqrt(k21[:, None, None, None])*torch.sign(grad.detach())
+            x_adv = torch.clamp(x_adv, 0.0, 1.0)
             logits = model(x_adv.detach_())
-            if (logits.data.max(1)[1] == y.data).float().mean() <= 0.1:
+            if (logits.data.max(1)[1] == y.data).float().mean() <= 0.3:
                 break
 
     else:
