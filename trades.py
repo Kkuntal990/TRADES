@@ -33,7 +33,7 @@ def trades_loss(model,
     x_adv = x_natural.detach() + 0.001 * torch.randn(x_natural.shape).cuda().detach()
 
     if distance == 'l_inf':
-        print('l_inf')
+        #print('l_inf')
         for _ in range(perturb_steps):
             x_adv.requires_grad_()
             with torch.enable_grad():
