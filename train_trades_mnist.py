@@ -32,7 +32,7 @@ parser.add_argument('--num-steps', default=40,
                     help='perturb number of steps')
 parser.add_argument('--step-size', default=0.01,
                     help='perturb step size')
-parser.add_argument('--beta', default=1.0,
+parser.add_argument('--beta', type=float, default=1.0,
                     help='regularization, i.e., 1/lambda in TRADES')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
@@ -73,15 +73,15 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
 
         # calculate robust loss
-        loss = trades_loss(model=model,
-                           x_natural=data,
-                           y=target,
-                           optimizer=optimizer,
-                           step_size=args.step_size,
-                           epsilon=args.epsilon,
-                           perturb_steps=args.num_steps,
-                           beta=args.beta, distance='pgap')
-
+        # loss = trades_loss(model=model,
+        #                    x_natural=data,
+        #                    y=target,
+        #                    optimizer=optimizer,
+        #                    step_size=args.step_size,
+        #                    epsilon=args.epsilon,
+        #                    perturb_steps=args.num_steps,
+        #                    beta=args.beta, distance='l_inf')
+        loss = F.cross_entropy(model(data), target)
         loss.backward()
         optimizer.step()
 
