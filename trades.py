@@ -98,7 +98,7 @@ def trades_loss(model,
                 torch.sqrt(k21[:, None, None, None])*torch.sign(grad.detach())
             x_adv = torch.clamp(x_adv, 0.0, 1.0)
             logits = model(x_adv.detach_())
-            if (logits.data.max(1)[1] == y.data).float().mean() <= 0.5:
+            if (logits.data.max(1)[1] == y.data).float().mean() <= 0.2:
                 break
 
     else:
