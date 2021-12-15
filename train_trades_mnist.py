@@ -73,17 +73,6 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
 
         # calculate robust loss
-<<<<<<< HEAD
-        # loss = trades_loss(model=model,
-        #                    x_natural=data,
-        #                    y=target,
-        #                    optimizer=optimizer,
-        #                    step_size=args.step_size,
-        #                    epsilon=args.epsilon,
-        #                    perturb_steps=args.num_steps,
-        #                    beta=args.beta, distance='l_inf')
-        loss = F.cross_entropy(model(data), target)
-=======
         loss = trades_loss(model=model,
                            x_natural=data,
                            y=target,
@@ -91,9 +80,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
                            step_size=args.step_size,
                            epsilon=args.epsilon,
                            perturb_steps=args.num_steps,
-                           beta=args.beta, distance='l_inf')
+                           beta=args.beta, distance='pgap')
 
->>>>>>> 5224cf27ab6221ed3eab7ed5562b6373656eb59d
         loss.backward()
         optimizer.step()
 

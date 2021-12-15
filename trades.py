@@ -28,7 +28,7 @@ def trades_loss(model,
     model.eval()
     batch_size = len(x_natural)
 
-    c2 = 1e4
+    c2 = 0.03*0.03
     # generate adversarial example
     x_adv = x_natural.detach() + 0.001 * torch.randn(x_natural.shape).cuda().detach()
 
