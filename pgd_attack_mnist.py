@@ -128,8 +128,10 @@ def eval_adv_test_whitebox(model, device, test_loader):
         err_natural, err_robust = _pgd_whitebox(model, X, y)
         robust_err_total += err_robust
         natural_err_total += err_natural
-    print('natural_err_total: ', natural_err_total)
-    print('robust_err_total: ', robust_err_total)
+    nat_acc = 100 - natural_err_total/100.0
+    rob_acc = 100 - robust_err_total/100.0
+    print('natural_acc: ', nat_acc)
+    print('robust_acc: ', rob_acc)
 
 
 def eval_adv_test_blackbox(model_target, model_source, device, test_loader):
